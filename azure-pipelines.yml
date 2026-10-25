@@ -1,0 +1,89 @@
+trigger:
+  branches:
+    include: [main]
+
+parameters:
+  - name: deployProduction
+    type: boolean
+    default: false
+
+variables:
+  pythonVersion: '3.12'
+  releaseVersion: '0.1.0-$(Build.BuildId)'
+
+stages:
+  - stage: Validate
+    jobs:
+      - job: Lint
+        pool: {vmImage: windows-latest}
+        steps:
+          - task: UsePythonVersion@0
+            inputs: {versionSpec: '$(pythonVersion)'}
+          - script: python -m pip install -e ".[dev]"
+          - script: python -m ruff check src tests
+          - powershell: ./scripts/validate-powershell.ps1
+          - powershell: ./scripts/validate-prometheus.ps1
+  - stage: Test
+    dependsOn: Validate
+    jobs:
+      - job: UnitTests
+        pool: {vmImage: windows-latest}
+        steps:
+          - task: UsePythonVersion@0
+            inputs: {versionSpec: '$(pythonVersion)'}
+          - script: python -m pip install -e ".[dev]"
+          - script: python -m pytest --junitxml=test-results.xml
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs: {testResultsFormat: JUnit, testResultsFiles: test-results.xml}
+  - stage: Package
+    dependsOn: Test
+    jobs:
+      - job: Build
+        pool: {vmImage: windows-latest}
+        steps:
+          - task: UsePythonVersion@0
+            inputs: {versionSpec: '$(pythonVersion)'}
+          - script: python -m pip install build
+          - script: python -m build
+          - powershell: |
+              New-Item -ItemType Directory package/wheelhouse -Force
+              python -m pip download --only-binary=:all: --dest package/wheelhouse (Get-ChildItem dist/*.whl).FullName
+              if ($LASTEXITCODE -ne 0) { throw 'Wheelhouse resolution failed.' }
+              Copy-Item scripts,config,sql,docs,README.md -Destination package -Recurse
+              New-Item -ItemType Directory '$(Build.ArtifactStagingDirectory)/release' -Force
+              Compress-Archive package/* '$(Build.ArtifactStagingDirectory)/release/$(releaseVersion).zip'
+              Get-FileHash '$(Build.ArtifactStagingDirectory)/release/$(releaseVersion).zip' -Algorithm SHA256 |
+                ConvertTo-Json | Set-Content '$(Build.ArtifactStagingDirectory)/release/checksum.json'
+          - publish: $(Build.ArtifactStagingDirectory)/release
+            artifact: release
+  - stage: Deploy
+    dependsOn: Package
+    condition: and(succeeded(), eq('${{ parameters.deployProduction }}', 'true'), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: WindowsProduction
+        # Configure approvals/checks in Azure DevOps before enabling deployments.
+        environment: data-observability-production
+        pool: {name: DataObservabilityWindows}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - download: current
+                  artifact: release
+                - powershell: |
+                    $artifact = '$(Pipeline.Workspace)/release/$(releaseVersion).zip'
+                    $expected = (Get-Content '$(Pipeline.Workspace)/release/checksum.json' -Raw | ConvertFrom-Json).Hash
+                    if ((Get-FileHash $artifact -Algorithm SHA256).Hash -ne $expected) { throw 'Artifact integrity failure.' }
+                    ./scripts/deploy/deploy.ps1 -Artifact $artifact -Version '$(releaseVersion)'
+                  displayName: Deploy candidate and verify before retaining activation
+  - stage: Verify
+    dependsOn: Deploy
+    condition: succeeded('Deploy')
+    jobs:
+      - job: Health
+        pool: {name: DataObservabilityWindows}
+        steps:
+          - checkout: self
+          - powershell: ./scripts/deploy/verify-deployment.ps1

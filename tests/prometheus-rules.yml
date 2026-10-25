@@ -1,0 +1,30 @@
+rule_files:
+  - ../config/prometheus/alert-rules.yml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'data_freshness_status{monitor_id="101"}'
+        values: '0+0x60'
+      - series: 'data_freshness_monitor_enabled{monitor_id="101"}'
+        values: '1+0x60'
+      - series: 'data_freshness_last_check_timestamp_seconds{monitor_id="101"}'
+        values: '0+0x60'
+      - series: 'data_freshness_check_interval_seconds{monitor_id="101"}'
+        values: '900+0x60'
+    promql_expr_test:
+      - expr: data_freshness:healthy
+        eval_time: 10m
+        exp_samples:
+          - labels: 'data_freshness:healthy{monitor_id="101"}'
+            value: 1
+      - expr: data_freshness:healthy
+        eval_time: 40m
+        exp_samples:
+          - labels: 'data_freshness:healthy{monitor_id="101"}'
+            value: 0
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: MissingEvaluations
+        exp_alerts:
+          - exp_labels: {monitor_id: '101', severity: critical}
