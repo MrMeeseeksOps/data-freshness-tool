@@ -61,6 +61,7 @@ foreach ($service in $services) {
 </service>
 "@ | Set-Content "$Root\apps\services\$name.xml"
     if (-not $existing) { Invoke-Native $exe @('install') }
+    Invoke-Native sc.exe @('config',$name,'obj=','NT AUTHORITY\LocalService','start=','auto')
 }
 foreach ($path in 'apps','config') {
     Invoke-Native icacls.exe @("$Root\$path", '/grant:r', '*S-1-5-19:(OI)(CI)RX')

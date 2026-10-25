@@ -57,7 +57,7 @@ def render(monitors, rows, last_success=None):
         emit(
             "data_freshness_evaluation_duration_seconds",
             labels,
-            row.get("query_duration_ms", 0) / 1000,
+            (row.get("query_duration_ms") or 0) / 1000,
         )
         emit("data_freshness_evaluation_success", labels, status in {"HEALTHY", "WARNING", "STALE"})
     emit("data_freshness_evaluator_last_success_timestamp_seconds", "", last_success or 0)

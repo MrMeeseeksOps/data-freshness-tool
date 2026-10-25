@@ -13,8 +13,14 @@ def test_selection_required():
         parser().parse_args(["check"])
 
 
-def test_dry_run_no_writes(client, settings, now):
-    client.query.side_effect = [([], None), ([], None)]
+def test_dry_run_no_writes(client, settings, now, monitor):
+    from dataclasses import asdict
+
+    client.query.side_effect = [
+        ([asdict(monitor)], None),
+        ([], None),
+        ([{"latest_data_at": now}], "query"),
+    ]
     args = parser().parse_args(["check", "--all", "--dry-run"])
     assert execute(args, settings, client) == 0
     assert not settings.metrics_file.exists()

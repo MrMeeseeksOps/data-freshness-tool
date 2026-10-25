@@ -42,8 +42,9 @@ class SnowflakeClient:
                         columns = [c[0].lower() for c in cursor.description or []]
                         return [dict(zip(columns, row)) for row in rows], cursor.sfqid
             except Exception as exc:
-                # Retry only connection-class SQLSTATEs; never retry auth/SQL/permission errors.
-                transient = str(getattr(exc, "sqlstate", "")).startswith("08")
+                # Ambiguous 08001 login failures can include invalid credentials; do not retry them.
+                transient = str(getattr(exc, "sqlstate", "")) in {"08003", "08006", "08S01"}
+                transient = transient or isinstance(exc, (ConnectionError, TimeoutError))
                 if not retry or not transient or attempt == self.settings.retries:
                     raise
                 self.sleep(2**attempt)

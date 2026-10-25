@@ -13,3 +13,4 @@ dist/
 *.log
 *.prom
 .DS_Store
+StartupProfileData-*

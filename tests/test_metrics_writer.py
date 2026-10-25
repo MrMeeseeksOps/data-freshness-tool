@@ -36,3 +36,12 @@ def test_atomic_publish_and_failure(tmp_path):
     assert list(tmp_path.iterdir()) == [path]
     atomic_write(path, "new\n")
     assert path.read_text() == "new\n"
+
+
+def test_never_evaluated_sql_nulls(monitor):
+    payload = render(
+        [monitor],
+        [{"monitor_id": 101, "status": "MISSING", "checked_at": None, "query_duration_ms": None}],
+    )
+    assert "data_freshness_evaluator_last_success_timestamp_seconds 0" in payload
+    assert "data_freshness_lag_seconds{" not in payload

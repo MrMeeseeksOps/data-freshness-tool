@@ -12,3 +12,13 @@ def test_persistence_parameterizes_and_is_idempotent(client, now):
     assert "can't read" not in first.args[0]
     assert "can't read" in first.args[1]
     assert "MERGE INTO" in first.args[0]
+
+
+def test_duplicate_metadata_rejected(client, monitor):
+    from dataclasses import asdict
+
+    import pytest
+
+    client.query.return_value = ([asdict(monitor), asdict(monitor)], None)
+    with pytest.raises(ValueError, match="Duplicate"):
+        Repository(client, "DATA_OBSERVABILITY").monitors()
