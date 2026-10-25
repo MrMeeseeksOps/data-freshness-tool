@@ -1,0 +1,38 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: Freshness evaluator
+    folder: Data Observability
+    interval: 1m
+    rules:
+      - uid: freshness-evaluator-missing
+        title: Freshness evaluator stopped
+        condition: C
+        for: 5m
+        noDataState: Alerting
+        execErrState: Alerting
+        labels:
+          severity: critical
+        annotations:
+          summary: Evaluator has not completed a run in 30 minutes
+        data:
+          - refId: A
+            datasourceUid: freshness-prometheus
+            relativeTimeRange: {from: 600, to: 0}
+            model:
+              refId: A
+              expr: time() - data_freshness_evaluator_last_success_timestamp_seconds
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [1800]}
+                  operator: {type: and}
+                  reducer: {type: last, params: []}
+                  type: query

@@ -1,0 +1,9 @@
+apiVersion: 1
+providers:
+  - name: Freshness
+    orgId: 1
+    folder: Data Observability
+    type: file
+    disableDeletion: true
+    options:
+      path: C:/DataObservability/config/grafana/dashboards

@@ -1,0 +1,5 @@
+{
+  "collectors": "cpu,memory,logical_disk,os,system,service,textfile",
+  "listen": "127.0.0.1:9182",
+  "textfile_directory": "C:\\DataObservability\\data\\textfile"
+}

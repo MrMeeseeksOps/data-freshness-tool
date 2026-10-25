@@ -1,0 +1,45 @@
+groups:
+  - name: freshness
+    rules:
+      - record: data_freshness:recent
+        expr: (time() - data_freshness_last_check_timestamp_seconds) < bool (data_freshness_check_interval_seconds + 900)
+      - record: data_freshness:healthy
+        expr: (data_freshness_status == bool 0) * data_freshness:recent * data_freshness_monitor_enabled
+      - alert: StaleTable
+        expr: (data_freshness_status == 2) and (data_freshness_monitor_enabled == 1)
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: 'Stale table {{ $labels.database }}.{{ $labels.schema }}.{{ $labels.table }}'}
+      - alert: EvaluationError
+        expr: (data_freshness_evaluation_success == 0) and (data_freshness_monitor_enabled == 1)
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: 'Freshness query failed for monitor {{ $labels.monitor_id }}'}
+      - alert: MissingEvaluations
+        expr: (data_freshness:recent == 0) and (data_freshness_monitor_enabled == 1)
+        for: 2m
+        labels: {severity: critical}
+      - alert: EvaluatorStopped
+        expr: time() - data_freshness_evaluator_last_success_timestamp_seconds > 1800 or absent(data_freshness_evaluator_last_success_timestamp_seconds)
+        for: 5m
+        labels: {severity: critical}
+      - alert: MonitoringServiceFailed
+        expr: windows_service_state{name=~"FreshnessPrometheus|FreshnessGrafana|windows_exporter",state="running"} == 0
+        for: 2m
+        labels: {severity: critical}
+      - alert: TargetUnavailable
+        expr: up == 0
+        for: 2m
+        labels: {severity: critical}
+      - alert: ExcessiveFreshnessLag
+        expr: (data_freshness_lag_seconds > data_freshness_critical_threshold_seconds) and (data_freshness_monitor_enabled == 1)
+        for: 5m
+        labels: {severity: warning}
+      - alert: LowFreshnessCompliance
+        expr: sum(data_freshness:healthy) / clamp_min(sum(data_freshness_monitor_enabled), 1) < 0.95
+        for: 15m
+        labels: {severity: warning}
+      - alert: TextfileCollectorError
+        expr: windows_exporter_collector_success{collector="textfile"} == 0
+        for: 2m
+        labels: {severity: critical}
