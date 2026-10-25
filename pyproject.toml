@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "snowflake-freshness-monitor"
+version = "0.1.0"
+description = "Metadata-driven Snowflake freshness evaluation for Windows monitoring"
+requires-python = ">=3.12"
+dependencies = ["snowflake-connector-python>=3.14,<5", "tzdata>=2025.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1", "build>=1.2,<2", "PyYAML>=6,<7", "prometheus-client>=0.21,<1"]
+
+[project.scripts]
+freshness-monitor = "freshness_monitor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = ["integration: requires an explicitly configured nonproduction Snowflake account"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
