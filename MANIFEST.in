@@ -1,0 +1,6 @@
+include .env.example azure-pipelines.yml
+recursive-include sql *.sql
+recursive-include scripts *.ps1
+recursive-include config *.yml *.json
+recursive-include docs *.md
+recursive-include tests *.yml
