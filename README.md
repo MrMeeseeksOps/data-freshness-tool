@@ -12,7 +12,9 @@ Snowflake CONFIG -> Python evaluator -> Snowflake AUDIT -> REPORTING views
                  Prometheus :9090 -> Grafana :3000
 ```
 
-An architecture bitmap was not supplied. Add the approved image at `docs/architecture/data-freshness-architecture.png`; it is deliberately absent until available.
+![Snowflake data freshness monitoring architecture](docs/architecture/data-freshness-architecture.png)
+
+See the [architecture notes](docs/architecture/README.md) for implementation details and diagram corrections, including the Prometheus port and exported metric names.
 
 ## Repository
 
@@ -34,7 +36,9 @@ An architecture bitmap was not supplied. Add the approved image at `docs/archite
 │   ├── run/                     # scheduled task and protected-environment launcher
 │   ├── deploy/                  # candidate deployment, health verification, rollback
 │   └── recovery/                # offline backup, restore, verification
-├── docs/                        # deployment, security, operations, recovery, troubleshooting
+├── docs/
+│   ├── architecture/            # architecture diagram and implementation notes
+│   └── *.md                    # deployment, security, operations, recovery, troubleshooting
 └── tests/                       # mocked unit tests and opt-in nonproduction integration test
 ```
 

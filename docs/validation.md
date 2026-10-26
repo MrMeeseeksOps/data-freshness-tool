@@ -23,7 +23,11 @@ The tests cover threshold boundaries, empty/null/future data, unsafe identifier 
 
 Not validated locally: real Snowflake DDL/view semantics and grants, Snowflake timeout/connector behavior against a real account, Windows MSI/EXE installs and vendor archive layouts, gMSA/group-policy behavior, Windows PowerShell 5.1 execution, native services/recovery, firewall enforcement, Grafana import/provisioning/notification delivery, Azure DevOps hosted builds/environment approvals, offline Windows wheelhouse deployment, and a complete backup/restore/reboot drill. YAML parsing checks syntax and does not replace Azure DevOps pipeline validation.
 
-No architecture image was available; the required PNG path is documented without fabricating an asset. MAX_TIMESTAMP is the sole implemented strategy. Calendar/business-day/monthly expected-arrival evaluation and differentiated Snowflake connection-failure metrics require future implementation. Production rollout must follow docs/deployment.md and the recovery drill checklist, recording real measurements and failures before approval.
+MAX_TIMESTAMP is the sole implemented strategy. Calendar/business-day/monthly expected-arrival evaluation and differentiated Snowflake connection-failure metrics require future implementation. Production rollout must follow docs/deployment.md and the recovery drill checklist, recording real measurements and failures before approval.
+
+## Architecture documentation update — October 26, 2026
+
+The supplied architecture PNG is now included, embedded in the README, and packaged in source distributions. [Architecture notes](architecture/README.md) document differences between the supplied diagram and the implementation, including the Prometheus port and exact metric names. This documentation update does not extend the runtime validation recorded above.
 
 ## Reproduce
 
